@@ -1,95 +1,101 @@
+"use client";
+
 import Image from "next/image";
 import styles from "./page.module.css";
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import { useRef, useEffect, useState } from "react";
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+export default function Home() {
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [isCardHovered, setIsCardHovered] = useState(false);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const [distanceFromCenter, setDistanceFromCenter] = useState(0);
+    const [angle, setAngle] = useState(0);
+
+    // Card hover listeners
+    useEffect(() => {
+        const cardElement = cardRef.current;
+
+        if (cardElement) {
+            const handleMouseEnter = (event: MouseEvent) => {
+                console.log("Mouse entered the card");
+                setIsCardHovered(true);
+            };
+
+            const handleMouseLeave = (event: MouseEvent) => {
+                console.log("Mouse left the card");
+                setIsCardHovered(false);
+            };
+
+            cardElement.addEventListener("mouseenter", handleMouseEnter);
+            cardElement.addEventListener("mouseleave", handleMouseLeave);
+
+            // Clean up event listeners on component unmount
+            return () => {
+                cardElement.removeEventListener("mouseenter", handleMouseEnter);
+                cardElement.removeEventListener("mouseleave", handleMouseLeave);
+            };
+        }
+    }, []);
+
+    // Global mouse move listener
+    useEffect(() => {
+        const handleMouseMove = (event: MouseEvent) => {
+            const globalMousePosition = { x: event.clientX, y: event.clientY };
+
+            setMousePosition({ x: globalMousePosition.x, y: globalMousePosition.y });
+            console.log(`Mouse position: X: ${event.clientX}, Y: ${event.clientY}`);
+
+            const cardElement = cardRef.current;
+            if (cardElement) {
+                const cardRect = cardElement.getBoundingClientRect();
+                const cardHalfWidth = cardRect.width / 2;
+                const cardHalfHeight = cardRect.height / 2;
+                const cardCenterX = cardRect.left + cardHalfWidth;
+                const cardCenterY = cardRect.top + cardHalfHeight;
+
+                const delta_x = event.clientX - cardCenterX;
+                const delta_y = event.clientY - cardCenterY;
+
+                const rotation_X = delta_y / cardHalfHeight;
+                const rotation_Y = delta_x / cardHalfWidth;
+
+                const distance_of_mouse_to_center_of_card = Math.sqrt(delta_x ** 2 + delta_y ** 2);
+                setDistanceFromCenter(distance_of_mouse_to_center_of_card);
+                const max_distance = Math.sqrt(cardHalfWidth ** 2 + cardHalfHeight ** 2);
+                const dynamic_degree = (distance_of_mouse_to_center_of_card * 10) / max_distance;
+                setAngle(dynamic_degree);
+
+                cardElement.style.transform = `perspective(400px) rotate3D(${-rotation_X}, ${rotation_Y}, 0, ${dynamic_degree}deg)`;
+            }
+        };
+
+        document.addEventListener("mousemove", handleMouseMove);
+
+        // Clean up event listener on component unmount
+        return () => {
+            document.removeEventListener("mousemove", handleMouseMove);
+        };
+    }, []);
+
+    return (
+        <div className={styles.page}>
+            <div className="card_system_container">
+                <div className="card_debug_pannel">
+                    <h2>debug</h2>
+                    <p>Transforming the card in the following manner:</p>
+                    <p>{isCardHovered ? "Hovered" : "Not Hovered"}</p>
+                    <p>
+                        Mouse Position: {mousePosition.x}, {mousePosition.y}
+                    </p>
+                    <p>Distance from center: {distanceFromCenter}</p>
+                    <p>Angle: {angle}</p>
+                </div>
+
+                <div ref={cardRef} className={styles.card}>
+                    <h1 className={styles.card_title}>Card {isCardHovered ? "Hovered" : ""}</h1>
+                </div>
+            </div>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    );
 }
